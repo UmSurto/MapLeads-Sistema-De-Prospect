@@ -1,0 +1,6 @@
+{
+  "name": "MapLeads - Extrator de Comércios Locais & WhatsApp",
+  "description": "Sistema moderno de busca instantânea e volátil de comércios locais no Google Maps com extração de WhatsApp, bairro, site, dashboard interativo, exportação CSV/PDF e CRM.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
