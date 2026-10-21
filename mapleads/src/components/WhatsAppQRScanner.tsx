@@ -7,10 +7,7 @@ import {
   CheckCircle2,
   AlertCircle,
   ShieldCheck,
-  Zap,
-  ArrowRight,
-  LogOut,
-  Info
+  LogOut
 } from 'lucide-react';
 
 interface WhatsAppQRScannerProps {
@@ -32,7 +29,9 @@ export const WhatsAppQRScanner: React.FC<WhatsAppQRScannerProps> = ({
     hasQr: false,
     qrDataUrl: null,
     lastConnectedAt: null,
-    lastError: null
+    lastError: null,
+    historySynced: false,
+    conversationCount: 0
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -48,18 +47,38 @@ export const WhatsAppQRScanner: React.FC<WhatsAppQRScannerProps> = ({
         onConnected?.();
       }
     } catch (err: any) {
-      setErrorMessage(err?.message || 'Erro ao verificar status');
+      const message = err?.message || 'Erro ao verificar status';
+      setStatus((current) => ({
+        ...current,
+        status: 'disconnected',
+        user: null,
+        hasQr: false,
+        qrDataUrl: null,
+        lastError: message
+      }));
+      setErrorMessage(message);
     }
   };
 
   useEffect(() => {
     // Initial request / connection trigger
-    WhatsAppService.requestConnect().then(data => {
-      setStatus(data);
-      if (data.status === 'connected') {
-        onConnected?.();
-      }
-    });
+    WhatsAppService.requestConnect()
+      .then(data => {
+        setStatus(data);
+        if (data.status === 'connected') onConnected?.();
+      })
+      .catch(err => {
+        const message = err.message || 'Não foi possível iniciar a conexão.';
+        setStatus((current) => ({
+          ...current,
+          status: 'disconnected',
+          user: null,
+          hasQr: false,
+          qrDataUrl: null,
+          lastError: message
+        }));
+        setErrorMessage(message);
+      });
 
     const interval = setInterval(checkStatus, 2500);
     return () => clearInterval(interval);
@@ -72,7 +91,9 @@ export const WhatsAppQRScanner: React.FC<WhatsAppQRScannerProps> = ({
     const timer = setInterval(() => {
       setTimerSeconds((prev) => {
         if (prev <= 1) {
-          WhatsAppService.requestConnect().then(setStatus);
+          WhatsAppService.requestConnect()
+            .then(setStatus)
+            .catch(err => setErrorMessage(err.message || 'Não foi possível atualizar o QR Code.'));
           return 60;
         }
         return prev - 1;
@@ -90,7 +111,7 @@ export const WhatsAppQRScanner: React.FC<WhatsAppQRScannerProps> = ({
       setStatus(res);
       setTimerSeconds(60);
     } catch (err: any) {
-      setErrorMessage('Falha ao atualizar QR Code.');
+      setErrorMessage(err.message || 'Falha ao atualizar QR Code.');
     } finally {
       setIsLoading(false);
     }
@@ -107,26 +128,6 @@ export const WhatsAppQRScanner: React.FC<WhatsAppQRScannerProps> = ({
     }
   };
 
-  const handleMockPair = async () => {
-    setIsLoading(true);
-    try {
-      const res = await WhatsAppService.mockPair();
-      setStatus({
-        status: 'connected',
-        user: res.user,
-        hasQr: false,
-        qrDataUrl: null,
-        lastConnectedAt: new Date().toISOString(),
-        lastError: null
-      });
-      onConnected?.();
-    } catch (err: any) {
-      setErrorMessage('Erro ao simular conexão');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const content = (
     <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-3xl w-full border border-gray-200 shadow-2xl relative">
       {/* Top Header */}
@@ -137,17 +138,23 @@ export const WhatsAppQRScanner: React.FC<WhatsAppQRScannerProps> = ({
           </div>
           <div>
             <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <span>Conexão Oficial com WhatsApp Web</span>
+              <span>Vincular uma conta WhatsApp</span>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                 status.status === 'connected'
                   ? 'bg-emerald-100 text-emerald-800'
                   : 'bg-amber-100 text-amber-800'
               }`}>
-                {status.status === 'connected' ? 'CONECTADO' : 'AGUARDANDO LEITURA'}
+                {status.status === 'connected'
+                  ? 'SESSÃO CONECTADA'
+                  : status.status === 'connecting'
+                  ? 'CONECTANDO'
+                  : status.status === 'qr_ready'
+                  ? 'AGUARDANDO QR'
+                  : 'DESCONECTADO'}
               </span>
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Protocolo oficial Multi-Device do WhatsApp com criptografia de ponta a ponta
+              Pareamento via Baileys, uma integração de terceiros não oficial.
             </p>
           </div>
         </div>
@@ -169,13 +176,18 @@ export const WhatsAppQRScanner: React.FC<WhatsAppQRScannerProps> = ({
             <CheckCircle2 className="w-9 h-9" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-gray-900">WhatsApp Conectado com Sucesso!</h3>
+            <h3 className="text-base font-bold text-gray-900">Sessão vinculada</h3>
             <p className="text-xs text-gray-600 mt-1">
               Aparelho vinculado: <strong className="text-emerald-700">{status.user?.phone || 'Dispositivo Ativo'}</strong>
               {status.user?.name && ` (${status.user.name})`}
             </p>
             <p className="text-[11px] text-gray-400 mt-0.5">
-              Agora você pode enviar mensagens diretas para qualquer comércio local do seu painel sem sair da tela.
+              {status.historySynced
+                ? `${status.conversationCount} conversas recebidas do WhatsApp vinculado.`
+                : 'A sessão abriu. Aguardando a sincronização das conversas do aparelho.'}
+            </p>
+            <p className="text-[11px] text-amber-700 mt-2 max-w-lg mx-auto">
+              Esta não é a interface oficial do WhatsApp. Para integração oficial da Meta, é necessário configurar a WhatsApp Business Platform.
             </p>
           </div>
 
@@ -243,21 +255,8 @@ export const WhatsAppQRScanner: React.FC<WhatsAppQRScannerProps> = ({
             <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 flex items-start gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
               <span>
-                <strong>Privacidade Máxima:</strong> A conexão é feita diretamente pelo protocolo de pareamento do WhatsApp. Suas conversas permanecem seguras e criptografadas.
+                <strong>Integração de terceiros:</strong> este app usa Baileys para vincular o dispositivo. Não é o WhatsApp Web oficial nem a API oficial da Meta.
               </span>
-            </div>
-
-            {/* Test Helper */}
-            <div className="pt-2 flex items-center gap-2">
-              <button
-                onClick={handleMockPair}
-                disabled={isLoading}
-                className="text-[11px] text-gray-500 hover:text-emerald-700 underline flex items-center gap-1 cursor-pointer"
-                title="Para demonstração rápida caso não esteja com o celular por perto"
-              >
-                <Zap className="w-3 h-3 text-amber-500" />
-                <span>Modo Demonstração Rápida (Simular Aparelho Pareado)</span>
-              </button>
             </div>
           </div>
 
@@ -268,7 +267,7 @@ export const WhatsAppQRScanner: React.FC<WhatsAppQRScannerProps> = ({
                 <div className="p-2 bg-white rounded-2xl shadow-lg border border-gray-200">
                   <img
                     src={status.qrDataUrl}
-                    alt="WhatsApp QR Code de Conexão Oficial"
+                    alt="QR Code do pareamento Baileys"
                     className="w-52 h-52 object-contain rounded-xl"
                   />
                 </div>
@@ -292,8 +291,8 @@ export const WhatsAppQRScanner: React.FC<WhatsAppQRScannerProps> = ({
             ) : (
               <div className="w-52 h-52 flex flex-col items-center justify-center text-center p-4">
                 <RefreshCw className="w-8 h-8 text-emerald-600 animate-spin mb-3" />
-                <span className="text-xs font-bold text-gray-800">Gerando QR Code Oficial...</span>
-                <span className="text-[11px] text-gray-500 mt-1">Conectando aos servidores do WhatsApp</span>
+                <span className="text-xs font-bold text-gray-800">Aguardando QR Code...</span>
+                <span className="text-[11px] text-gray-500 mt-1">Solicitando código à integração Baileys</span>
                 <button
                   onClick={handleRefreshQR}
                   className="mt-4 px-3 py-1 bg-white border border-gray-300 rounded-lg text-[11px] font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer"

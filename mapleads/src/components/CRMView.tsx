@@ -203,12 +203,12 @@ export const CRMView: React.FC<CRMViewProps> = ({
       {/* VIEW 1: WHATSAPP INTEGRADO FULL WINDOW */}
       {crmTab === 'whatsapp' && (
         <div className="space-y-4">
-          <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs text-emerald-900 flex flex-wrap items-center justify-between gap-2">
+          <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2">
             <span className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 animate-pulse"></span>
-              <strong>WhatsApp Web Oficial Conectado por QR Code:</strong> Conecte seu aparelho oficial para conversar diretamente com os comércios sem sair da tela.
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+              <strong>Integração de terceiros:</strong> As conversas só aparecem após o vínculo real da conta. Esta não é a interface oficial do WhatsApp.
             </span>
-            <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">Protocolo Oficial Multi-Device</span>
+            <span className="text-[11px] font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">Baileys • Não oficial</span>
           </div>
 
           <WhatsAppCRMWindow
