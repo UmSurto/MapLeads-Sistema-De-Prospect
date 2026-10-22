@@ -95,7 +95,9 @@ export const WhatsAppCRMWindow: React.FC<WhatsAppCRMWindowProps> = ({
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const isNearBottom = useRef(false);
+  const seenMessageIds = useRef<Set<string> | null>(null);
   const lastActiveLeadId = useRef(activeLeadId);
   const selectionInitialized = useRef(false);
 
@@ -104,7 +106,23 @@ export const WhatsAppCRMWindow: React.FC<WhatsAppCRMWindowProps> = ({
       const status = await WhatsAppService.getStatus();
       setWaStatus(status);
       if (status.status === 'connected') {
-        setConversations(await WhatsAppService.getConversations());
+        const latestConversations = await WhatsAppService.getConversations();
+        setConversations((current) => {
+          const unchanged =
+            current.length === latestConversations.length &&
+            current.every((conversation, index) => {
+              const latest = latestConversations[index];
+              return (
+                conversation.id === latest.id &&
+                conversation.name === latest.name &&
+                conversation.phone === latest.phone &&
+                conversation.lastMessage === latest.lastMessage &&
+                conversation.lastMessageTimestamp === latest.lastMessageTimestamp &&
+                conversation.unreadCount === latest.unreadCount
+              );
+            });
+          return unchanged ? current : latestConversations;
+        });
       } else {
         setConversations([]);
         setMessages([]);
@@ -132,55 +150,37 @@ export const WhatsAppCRMWindow: React.FC<WhatsAppCRMWindowProps> = ({
       if (phone) leadByPhone.set(phone, lead);
     }
 
-    const actualThreads: InboxThread[] = conversations.map((conversation) => {
+    return conversations
+      .map((conversation): InboxThread => {
       const lead = conversation.phone ? leadByPhone.get(normalizePhone(conversation.phone)) || null : null;
       return { ...conversation, lead };
-    });
-    const knownJids = new Set(actualThreads.map((thread) => thread.id));
-    const knownPhones = new Set(
-      actualThreads.map((thread) => thread.phone && normalizePhone(thread.phone)).filter(Boolean)
-    );
-    const leadThreads = leads
-      .map((lead): InboxThread | null => {
-        const phone = normalizePhone(lead.rawPhone || lead.phone);
-        if (!phone) return null;
-        const jid = `${phone}@s.whatsapp.net`;
-        if (knownJids.has(jid) || knownPhones.has(phone)) return null;
-        return {
-          id: jid,
-          name: lead.name,
-          phone,
-          isGroup: false,
-          lastMessage: '',
-          lastMessageTimestamp: 0,
-          unreadCount: 0,
-          lead
-        };
       })
-      .filter((thread): thread is InboxThread => thread !== null);
-
-    return [...actualThreads, ...leadThreads].sort(
-      (a, b) => b.lastMessageTimestamp - a.lastMessageTimestamp
-    );
+      .sort((a, b) => b.lastMessageTimestamp - a.lastMessageTimestamp);
   }, [conversations, leads]);
 
   const selectedLeadThread = leads.find((lead) => lead.id === activeLeadId);
   const selectedLeadJid = selectedLeadThread
-    ? threads.find((thread) => thread.lead?.id === selectedLeadThread.id)?.id ||
-      `${normalizePhone(selectedLeadThread.rawPhone || selectedLeadThread.phone)}@s.whatsapp.net`
+    ? threads.find((thread) => thread.lead?.id === selectedLeadThread.id)?.id || ''
     : '';
 
   useEffect(() => {
     const leadChanged = lastActiveLeadId.current !== activeLeadId;
     if (leadChanged) lastActiveLeadId.current = activeLeadId;
-    if (leadChanged || !selectionInitialized.current) {
+    if (leadChanged) {
       selectionInitialized.current = true;
-      if (selectedLeadJid) {
-        setSelectedJid(selectedLeadJid);
-        return;
-      }
+      setSelectedJid(selectedLeadJid);
+      return;
     }
-    if (!selectedJid && threads.length) {
+    if (selectedLeadJid && !selectedJid) {
+      selectionInitialized.current = true;
+      setSelectedJid(selectedLeadJid);
+      return;
+    }
+    if (!selectionInitialized.current) {
+      selectionInitialized.current = true;
+      if (activeLeadId) return;
+    }
+    if (!activeLeadId && !selectedJid && threads.length) {
       setSelectedJid(threads[0].id);
     }
   }, [activeLeadId, selectedLeadJid, threads, selectedJid]);
@@ -191,29 +191,74 @@ export const WhatsAppCRMWindow: React.FC<WhatsAppCRMWindowProps> = ({
       return;
     }
     let active = true;
+    let requestPending = false;
+    seenMessageIds.current = null;
     const refreshMessages = async () => {
+      if (requestPending) return;
+      requestPending = true;
       try {
         const latest = await WhatsAppService.getMessages(selectedJid);
-        if (active) setMessages(latest);
+        if (!active) return;
+        const nextIds = new Set(latest.map((message) => message.id));
+        const previousIds = seenMessageIds.current;
+        const hasNewMessages =
+          previousIds !== null && latest.some((message) => !previousIds.has(message.id));
+        seenMessageIds.current = nextIds;
+        setMessages((current) => {
+          const unchanged =
+            current.length === latest.length &&
+            current.every((message, index) => {
+              const next = latest[index];
+              return (
+                message.id === next.id &&
+                message.text === next.text &&
+                message.timestamp === next.timestamp &&
+                message.status === next.status
+              );
+            });
+          return unchanged ? current : latest;
+        });
+        if (previousIds === null) {
+          requestAnimationFrame(() => {
+            const container = messagesContainerRef.current;
+            if (!container) return;
+            isNearBottom.current =
+              container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+          });
+        } else if (hasNewMessages && isNearBottom.current) {
+          requestAnimationFrame(() => {
+            const container = messagesContainerRef.current;
+            if (!container) return;
+            container.scrollTop = container.scrollHeight;
+            isNearBottom.current = true;
+          });
+        }
       } catch (error) {
         if (active) {
           setErrorMessage(error instanceof Error ? error.message : 'Falha ao sincronizar mensagens.');
         }
+      } finally {
+        requestPending = false;
       }
     };
     void refreshMessages();
-    const interval = window.setInterval(() => void refreshMessages(), 1500);
+    const interval = window.setInterval(() => void refreshMessages(), 2000);
     return () => {
       active = false;
       window.clearInterval(interval);
     };
   }, [selectedJid, waStatus.status]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  const handleMessagesScroll = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    isNearBottom.current =
+      container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+  };
 
   const selectedThread = threads.find((thread) => thread.id === selectedJid) || null;
+  const canSendToSelectedThread =
+    Boolean(selectedThread?.phone) || Boolean(selectedThread?.isGroup);
   const filteredThreads = threads.filter((thread) => {
     if (filterMode === 'not_sent' && thread.lead?.messageSent) return false;
     if (filterMode === 'sent' && !thread.lead?.messageSent) return false;
@@ -524,7 +569,11 @@ export const WhatsAppCRMWindow: React.FC<WhatsAppCRMWindowProps> = ({
                   )}
                 </header>
 
-                <div className="flex-1 space-y-3 overflow-y-auto p-4">
+                <div
+                  ref={messagesContainerRef}
+                  onScroll={handleMessagesScroll}
+                  className="flex-1 space-y-3 overflow-y-auto p-4"
+                >
                   <div className="mx-auto max-w-lg rounded-lg bg-[#fff4d2] px-3 py-2 text-center text-[10px] text-gray-600">
                     <ShieldCheck className="mr-1 inline h-3.5 w-3.5" />
                     Exibindo mensagens recebidas da sessão vinculada. Não é uma interface oficial do WhatsApp.
@@ -563,7 +612,6 @@ export const WhatsAppCRMWindow: React.FC<WhatsAppCRMWindowProps> = ({
                       </p>
                     </div>
                   )}
-                  <div ref={messagesEndRef} />
                 </div>
 
                 {selectedThread.lead && templates.length > 0 && (
@@ -603,12 +651,21 @@ export const WhatsAppCRMWindow: React.FC<WhatsAppCRMWindowProps> = ({
                         void handleSendMessage();
                       }
                     }}
-                    placeholder={`Mensagem para ${selectedThread.name}...`}
+                    placeholder={
+                      canSendToSelectedThread
+                        ? `Mensagem para ${selectedThread.name}...`
+                        : 'Esta conversa sincronizada é somente leitura'
+                    }
                     className="min-w-0 flex-1 resize-none rounded-2xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                   <button
                     onClick={() => void handleSendMessage()}
-                    disabled={!inputMessage.trim() || isSending || waStatus.status !== 'connected'}
+                    disabled={
+                      !inputMessage.trim() ||
+                      isSending ||
+                      waStatus.status !== 'connected' ||
+                      !canSendToSelectedThread
+                    }
                     className="flex shrink-0 items-center justify-center rounded-full bg-[#00a884] p-3 text-white shadow-md disabled:opacity-40"
                     title="Enviar mensagem pelo WhatsApp vinculado"
                   >
@@ -623,7 +680,7 @@ export const WhatsAppCRMWindow: React.FC<WhatsAppCRMWindowProps> = ({
             ) : (
               <div className="flex flex-1 items-center justify-center text-xs text-gray-500">
                 {waStatus.status === 'connected'
-                  ? 'Selecione uma conversa ou estabelecimento.'
+                  ? 'Selecione uma conversa sincronizada do WhatsApp na lista.'
                   : 'Vincule seu WhatsApp para carregar as conversas.'}
               </div>
             )}

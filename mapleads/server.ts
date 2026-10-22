@@ -68,6 +68,14 @@ const waContacts = new Map<string, Contact>();
 const waMessages = new Map<string, WhatsAppMessageRecord[]>();
 const waLidToJid = new Map<string, string>();
 
+function isWhatsAppChatJid(jid: string): boolean {
+  return (
+    jid.endsWith('@s.whatsapp.net') ||
+    jid.endsWith('@g.us') ||
+    jid.endsWith('@lid')
+  );
+}
+
 function contactName(jid: string, fallback?: string | null): string {
   const contact = waContacts.get(jid) || waContacts.get(waLidToJid.get(jid) || '');
   return contact?.name || contact?.verifiedName || contact?.notify || fallback || jid;
@@ -88,16 +96,16 @@ function upsertContact(contact: Contact) {
   if (lid && phoneJid?.endsWith('@s.whatsapp.net')) waLidToJid.set(lid, phoneJid);
 }
 
-function getMessageText(message: WAMessage): string {
+function getMessageText(message: WAMessage): string | null {
   const content = normalizeMessageContent(message.message);
   const type = getContentType(content);
-  if (!content || !type) return 'Mensagem sem conteúdo de texto';
+  if (!content || !type) return null;
 
   switch (type) {
     case 'conversation':
-      return content.conversation || '';
+      return content.conversation || null;
     case 'extendedTextMessage':
-      return content.extendedTextMessage?.text || '';
+      return content.extendedTextMessage?.text || null;
     case 'imageMessage':
       return content.imageMessage?.caption || '📷 Imagem';
     case 'videoMessage':
@@ -116,7 +124,7 @@ function getMessageText(message: WAMessage): string {
     case 'contactsArrayMessage':
       return '👤 Contato';
     default:
-      return 'Mensagem não textual';
+      return null;
   }
 }
 
@@ -124,6 +132,7 @@ function upsertConversation(
   jid: string,
   update: Omit<Partial<WhatsAppConversationRecord>, 'name'> & { name?: string | null }
 ) {
+  if (!isWhatsAppChatJid(jid)) return;
   const previous = waConversations.get(jid);
   const isGroup = jid.endsWith('@g.us');
   const resolvedJid = waLidToJid.get(jid) || jid;
@@ -144,14 +153,16 @@ function upsertConversation(
 function upsertWhatsAppMessage(message: WAMessage) {
   const jid = message.key.remoteJid;
   const id = message.key.id;
-  if (!jid || !id) return;
+  if (!jid || !id || !isWhatsAppChatJid(jid)) return;
+  const text = getMessageText(message);
+  if (!text?.trim()) return;
 
   const timestamp = Number(message.messageTimestamp || Date.now() / 1000) * 1000;
   const record: WhatsAppMessageRecord = {
     id,
     jid,
     fromMe: Boolean(message.key.fromMe),
-    text: getMessageText(message),
+    text,
     timestamp,
     status: message.status ?? undefined
   };
@@ -443,12 +454,8 @@ app.get('/api/whatsapp/conversations/:jid/messages', (req: Request, res: Respons
     return res.status(503).json({ error: 'O WhatsApp não está conectado.' });
   }
   const jid = req.params.jid;
-  if (
-    !jid.endsWith('@s.whatsapp.net') &&
-    !jid.endsWith('@g.us') &&
-    !jid.endsWith('@lid')
-  ) {
-    return res.status(400).json({ error: 'Identificador de conversa inválido.' });
+  if (!waConversations.has(jid) && !waMessages.has(jid)) {
+    return res.json({ messages: [] });
   }
   const canonicalJid = waLidToJid.get(jid);
   const messages = [
