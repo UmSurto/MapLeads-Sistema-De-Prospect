@@ -13,8 +13,14 @@ import {
   Star,
   LayoutGrid,
   Columns3,
-  Bot
+  Bot,
+  Pencil,
+  Trash2,
+  Check,
+  X
 } from 'lucide-react';
+
+type LeadCrmColor = NonNullable<Lead['crmColor']>;
 
 interface CRMViewProps {
   leads: Lead[];
@@ -23,7 +29,116 @@ interface CRMViewProps {
   templates: MessageTemplate[];
   userName: string;
   onToggleMessageSent: (leadId: string) => void;
+  onUpdateLeadName: (leadId: string, name: string) => void;
+  onUpdateLeadColor: (leadId: string, color: LeadCrmColor) => void;
+  onDeleteLead: (leadId: string) => void;
 }
+
+const CRM_COLORS: { value: LeadCrmColor; label: string; dot: string; card: string }[] = [
+  { value: 'active', label: 'Verde · Ativo', dot: 'bg-emerald-500', card: 'border-l-emerald-500' },
+  { value: 'undecided', label: 'Amarelo · Indeciso', dot: 'bg-amber-400', card: 'border-l-amber-400' },
+  { value: 'disinterested', label: 'Vermelho · Desinteressado', dot: 'bg-red-500', card: 'border-l-red-500' },
+  { value: 'closed', label: 'Azul · Fechou negócio', dot: 'bg-blue-500', card: 'border-l-blue-500' }
+];
+
+const LeadCRMControls: React.FC<{
+  lead: Lead;
+  onUpdateLeadName: (leadId: string, name: string) => void;
+  onUpdateLeadColor: (leadId: string, color: LeadCrmColor) => void;
+  onDeleteLead: (leadId: string) => void;
+}> = ({ lead, onUpdateLeadName, onUpdateLeadColor, onDeleteLead }) => {
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [draftName, setDraftName] = useState(lead.name);
+  const selectedColor = lead.crmColor || 'active';
+
+  const saveName = () => {
+    const name = draftName.trim();
+    if (!name) return;
+    onUpdateLeadName(lead.id, name);
+    setIsRenaming(false);
+  };
+
+  const startRenaming = () => {
+    setDraftName(lead.name);
+    setIsRenaming(true);
+  };
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-1.5" onClick={(event) => event.stopPropagation()}>
+      {isRenaming ? (
+        <>
+          <input
+            autoFocus
+            aria-label={`Novo nome para ${lead.name}`}
+            value={draftName}
+            onChange={(event) => setDraftName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') saveName();
+              if (event.key === 'Escape') setIsRenaming(false);
+            }}
+            className="min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-2 py-1 text-xs text-gray-800"
+          />
+          <button
+            type="button"
+            onClick={saveName}
+            disabled={!draftName.trim()}
+            aria-label={`Salvar nome de ${lead.name}`}
+            className="rounded-md p-1 text-emerald-700 hover:bg-emerald-50 disabled:opacity-40"
+          >
+            <Check className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsRenaming(false)}
+            aria-label={`Cancelar renomeação de ${lead.name}`}
+            className="rounded-md p-1 text-gray-500 hover:bg-gray-100"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={startRenaming}
+          aria-label={`Renomear ${lead.name}`}
+          className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-medium text-gray-600 hover:bg-gray-100"
+        >
+          <Pencil className="h-3 w-3" />
+          Renomear
+        </button>
+      )}
+
+      <label className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-1.5 py-1 text-[10px] text-gray-600">
+        <span className={`h-2 w-2 rounded-full ${CRM_COLORS.find((color) => color.value === selectedColor)?.dot || 'bg-emerald-500'}`} />
+        <span className="sr-only">Classificação por cor</span>
+        <select
+          aria-label={`Cor e classificação de ${lead.name}`}
+          value={selectedColor}
+          onChange={(event) => onUpdateLeadColor(lead.id, event.target.value as LeadCrmColor)}
+          className="max-w-[145px] cursor-pointer bg-transparent text-[10px] text-gray-700 focus:outline-none"
+        >
+          {CRM_COLORS.map((color) => (
+            <option key={color.value} value={color.value}>{color.label}</option>
+          ))}
+        </select>
+      </label>
+
+      <button
+        type="button"
+        onClick={() => {
+          if (window.confirm(`Remover "${lead.name}" do CRM? Esta ação não pode ser desfeita.`)) {
+            onDeleteLead(lead.id);
+          }
+        }}
+        aria-label={`Remover ${lead.name} do CRM`}
+        className="inline-flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-medium text-red-700 hover:bg-red-50"
+      >
+        <Trash2 className="h-3 w-3" />
+        Remover
+      </button>
+    </div>
+  );
+};
 
 const STAGES: { key: Lead['status']; title: string; color: string; border: string; bg: string }[] = [
   { key: 'novo', title: 'Novos Leads', color: 'text-gray-700', border: 'border-gray-300', bg: 'bg-gray-100' },
@@ -39,7 +154,10 @@ export const CRMView: React.FC<CRMViewProps> = ({
   onOpenWhatsAppModal,
   templates,
   userName,
-  onToggleMessageSent
+  onToggleMessageSent,
+  onUpdateLeadName,
+  onUpdateLeadColor,
+  onDeleteLead
 }) => {
   const [crmTab, setCrmTab] = useState<'whatsapp' | 'kanban' | 'split'>('whatsapp');
   const [activeChatLeadId, setActiveChatLeadId] = useState<string | null>(leads[0]?.id || null);
@@ -48,6 +166,13 @@ export const CRMView: React.FC<CRMViewProps> = ({
   const [webhookStatus, setWebhookStatus] = useState<string | null>(null);
 
   const metrics = computeLeadMetrics(leads);
+
+  const handleDeleteLead = (leadId: string) => {
+    if (activeChatLeadId === leadId) {
+      setActiveChatLeadId(leads.find((lead) => lead.id !== leadId)?.id || null);
+    }
+    onDeleteLead(leadId);
+  };
 
   const handleTriggerWebhook = async () => {
     if (!webhookUrl.trim()) {
@@ -255,6 +380,12 @@ export const CRMView: React.FC<CRMViewProps> = ({
                       )}
                     </div>
                     <p className="text-[11px] text-gray-500 mt-0.5">{lead.neighborhood} • {lead.phone}</p>
+                    <LeadCRMControls
+                      lead={lead}
+                      onUpdateLeadName={onUpdateLeadName}
+                      onUpdateLeadColor={onUpdateLeadColor}
+                      onDeleteLead={handleDeleteLead}
+                    />
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -335,7 +466,9 @@ export const CRMView: React.FC<CRMViewProps> = ({
                       stageLeads.map((lead) => (
                         <div
                           key={lead.id}
-                          className="bg-white p-3.5 rounded-xl border border-gray-200 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between"
+                          className={`bg-white p-3.5 rounded-xl border border-gray-200 border-l-4 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between ${
+                            CRM_COLORS.find((color) => color.value === (lead.crmColor || 'active'))?.card || 'border-l-emerald-500'
+                          }`}
                         >
                           <div>
                             <div className="flex items-center justify-between gap-1 mb-1">
@@ -350,6 +483,12 @@ export const CRMView: React.FC<CRMViewProps> = ({
                               <Phone className="w-3 h-3 text-gray-400" />
                               <span>{lead.phone}</span>
                             </div>
+                            <LeadCRMControls
+                              lead={lead}
+                              onUpdateLeadName={onUpdateLeadName}
+                              onUpdateLeadColor={onUpdateLeadColor}
+                              onDeleteLead={handleDeleteLead}
+                            />
                           </div>
 
                           {/* Action buttons on card */}

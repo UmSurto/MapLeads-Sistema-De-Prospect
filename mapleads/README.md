@@ -15,9 +15,11 @@ View your app in AI Studio: https://ai.studio/apps/644a8fc7-388e-4d9c-b0d4-417cf
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Copy `.env.example` to `.env.local` and configure `VITE_GOOGLE_MAPS_API_KEY` with a browser key restricted by HTTP referrer. Enable Maps JavaScript API, Places API (New), and billing in Google Cloud. The Gemini key is only needed for Gemini features.
 3. Run the app:
    `npm run dev`
+
+Searches are manual: the app does not submit a default location or show generated sample businesses. Only results returned by Google Places appear, and a lead enters the CRM only after selecting its interest and clicking **Salvar no CRM**. CRM leads are persisted in this browser's local storage; unselected search results are temporary.
 
 ## WhatsApp inbox
 

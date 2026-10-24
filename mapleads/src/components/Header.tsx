@@ -1,20 +1,20 @@
 import React from 'react';
-import { Search, BarChart3, Kanban, MessageSquare, Share2, RotateCcw, ShieldCheck, Zap } from 'lucide-react';
+import { Search, BarChart3, Kanban, MessageSquare, ShieldCheck, Moon, Sun } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: 'search' | 'dashboard' | 'crm' | 'templates';
   setActiveTab: (tab: 'search' | 'dashboard' | 'crm' | 'templates') => void;
   leadsCount: number;
-  onReset: () => void;
-  onOpenShare: () => void;
+  isDarkTheme: boolean;
+  onToggleTheme: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab,
   leadsCount,
-  onReset,
-  onOpenShare
+  isDarkTheme,
+  onToggleTheme
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-xs">
@@ -94,26 +94,20 @@ export const Header: React.FC<HeaderProps> = ({
               <MessageSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>Templates</span>
             </button>
+
+            <button
+              type="button"
+              onClick={onToggleTheme}
+              aria-label={isDarkTheme ? 'Ativar tema claro' : 'Ativar tema escuro'}
+              aria-pressed={isDarkTheme}
+              title={isDarkTheme ? 'Ativar tema claro' : 'Ativar tema escuro'}
+              className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+            >
+              {isDarkTheme ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              <span>{isDarkTheme ? 'Claro' : 'Escuro'}</span>
+            </button>
           </nav>
 
-          {/* Quick Actions */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              onClick={onOpenShare}
-              title="Compartilhar busca"
-              className="p-1.5 sm:p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-gray-200"
-            >
-              <Share2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
-            <button
-              onClick={onReset}
-              title="Limpar resultados da busca"
-              className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-gray-200"
-            >
-              <RotateCcw className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              <span className="hidden sm:inline">Limpar</span>
-            </button>
-          </div>
         </div>
       </div>
     </header>

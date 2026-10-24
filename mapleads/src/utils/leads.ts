@@ -17,6 +17,7 @@ export interface Lead {
   status: 'novo' | 'contatado' | 'negociacao' | 'convertido' | 'perdido';
   messageSent: boolean;
   interest: 'interessante' | 'neutro' | 'desinteressante';
+  crmColor?: 'active' | 'undecided' | 'disinterested' | 'closed';
   listId: string;
   notes?: string;
   createdAt: string;
@@ -56,6 +57,12 @@ export interface MessageTemplate {
   title: string;
   content: string;
   category: string;
+}
+
+export function getLeadIdentity(lead: Lead): string {
+  const phone = (lead.rawPhone || '').replace(/\D/g, '');
+  if (phone) return `phone:${phone}`;
+  return `name:${lead.name.trim().toLowerCase()}|address:${lead.address.trim().toLowerCase()}`;
 }
 
 export const DEFAULT_TEMPLATES: MessageTemplate[] = [
