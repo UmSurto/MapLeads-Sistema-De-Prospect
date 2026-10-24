@@ -36,7 +36,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ leads, searchCity,
 
   if (metrics.total === 0) {
     return (
-      <div className="max-w-4xl mx-auto py-20 px-4 text-center">
+      <div className="dashboard-empty max-w-4xl mx-auto py-20 px-4 text-center">
         <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
           <BarChart3 className="w-8 h-8" />
         </div>
@@ -49,7 +49,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ leads, searchCity,
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="dashboard-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Top Header & Month Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-5">
         <div>
@@ -91,7 +91,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ leads, searchCity,
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Leads */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between">
+        <div className="dashboard-metric-card bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-gray-500">Total de Leads Extraídos</span>
             <div className="text-2xl font-extrabold text-gray-900 mt-1">{metrics.total}</div>
@@ -106,7 +106,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ leads, searchCity,
         </div>
 
         {/* Leads with WhatsApp */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between">
+        <div className="dashboard-metric-card bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-gray-500">Com WhatsApp Ativo</span>
             <div className="text-2xl font-extrabold text-emerald-700 mt-1">
@@ -120,7 +120,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ leads, searchCity,
         </div>
 
         {/* Opportunity: Without Website */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between">
+        <div className="dashboard-metric-card bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-gray-500">Sem Site Oficial</span>
             <div className="text-2xl font-extrabold text-amber-700 mt-1">
@@ -134,7 +134,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ leads, searchCity,
         </div>
 
         {/* Google Average Rating */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between">
+        <div className="dashboard-metric-card bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between">
           <div>
             <span className="text-xs font-semibold text-gray-500">Média de Reputação</span>
             <div className="text-2xl font-extrabold text-gray-900 mt-1 flex items-center gap-1.5">

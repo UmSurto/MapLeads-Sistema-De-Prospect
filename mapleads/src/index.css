@@ -1,14 +1,222 @@
 @import "tailwindcss";
 
+:root {
+  --app-canvas: #f3f6fb;
+  --app-surface: #ffffff;
+  --app-ink: #16263d;
+  --app-muted: #64748b;
+  --app-line: #e1e8f0;
+  --app-brand: #1d4ed8;
+  --app-accent: #0f766e;
+}
+
 @layer base {
+  html {
+    background-color: var(--app-canvas);
+  }
+
   body {
+    background-color: var(--app-canvas);
+    color: var(--app-ink);
     font-family: 'Google Sans', 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  :focus-visible {
+    outline: 3px solid rgb(20 184 166 / 55%);
+    outline-offset: 2px;
+  }
+}
+
+.app-shell {
+  background: var(--app-canvas);
+}
+
+.app-header {
+  border-color: var(--app-line);
+  box-shadow: 0 8px 24px rgb(20 38 61 / 5%);
+  backdrop-filter: blur(16px);
+}
+
+.brand-mark {
+  background: linear-gradient(145deg, #2563eb, #0f766e);
+  box-shadow: 0 5px 14px rgb(15 118 110 / 25%);
+}
+
+.app-nav-active {
+  box-shadow: 0 2px 8px rgb(29 78 216 / 8%);
+}
+
+.app-theme-toggle {
+  background-color: var(--app-surface);
+}
+
+.app-footer {
+  border-color: var(--app-line);
+}
+
+.search-hero-panel {
+  isolation: isolate;
+  background: linear-gradient(118deg, #102b4e 0%, #15446d 54%, #0f766e 100%);
+}
+
+.search-hero-orb {
+  position: absolute;
+  z-index: -1;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 9999px;
+  pointer-events: none;
+}
+
+.search-hero-orb-one {
+  top: -11rem;
+  right: -4rem;
+  width: 31rem;
+  height: 31rem;
+  box-shadow: 0 0 0 2.5rem rgb(255 255 255 / 3%), 0 0 0 5rem rgb(255 255 255 / 2%);
+}
+
+.search-hero-orb-two {
+  bottom: -17rem;
+  left: 16%;
+  width: 26rem;
+  height: 26rem;
+  border-color: rgb(255 255 255 / 7%);
+}
+
+.search-hero-eyebrow {
+  border: 1px solid rgb(153 246 228 / 28%);
+  background: rgb(13 148 136 / 18%);
+  color: #99f6e4;
+}
+
+.search-hero-title {
+  color: #ffffff;
+}
+
+.search-hero-subtitle {
+  color: rgb(226 232 240 / 88%);
+}
+
+.search-form {
+  border: 1px solid rgb(255 255 255 / 60%);
+  background: rgb(255 255 255 / 96%);
+}
+
+.search-field {
+  border-color: #dce5ef;
+  background: #f7f9fc;
+  color: #16263d;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.search-field::placeholder {
+  color: #8795a8;
+}
+
+.search-field:focus {
+  border-color: #14b8a6;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgb(20 184 166 / 15%);
+}
+
+.search-submit {
+  background: linear-gradient(135deg, #2563eb, #0f766e);
+  box-shadow: 0 5px 14px rgb(29 78 216 / 20%);
+}
+
+.search-submit:hover:not(:disabled) {
+  box-shadow: 0 8px 18px rgb(15 118 110 / 25%);
+}
+
+.search-submit:disabled {
+  color: #ffffff;
+  opacity: 0.82;
+  box-shadow: none;
+}
+
+.search-empty-card {
+  border-color: #dce8ee;
+  background: linear-gradient(140deg, #ffffff, #f5fafb);
+  box-shadow: 0 12px 30px rgb(25 54 78 / 5%);
+}
+
+.results-table-wrap {
+  border-color: var(--app-line);
+  box-shadow: 0 12px 30px rgb(25 54 78 / 5%);
+}
+
+.results-table thead {
+  background: #f2f7fa;
+}
+
+.results-table tbody tr {
+  transition: background-color 140ms ease;
+}
+
+.results-count {
+  background: #e8f5f3;
+  color: #0f766e;
+}
+
+.crm-page-header {
+  border-color: var(--app-line);
+}
+
+.crm-page-header h1,
+.dashboard-page h1 {
+  letter-spacing: -0.035em;
+}
+
+.crm-view-switch {
+  border: 1px solid var(--app-line);
+  background: #eef3f8;
+}
+
+.crm-export-actions button {
+  box-shadow: 0 2px 5px rgb(20 38 61 / 5%);
+}
+
+.crm-metrics-strip,
+.crm-webhook-card,
+.dashboard-metric-card {
+  box-shadow: 0 8px 24px rgb(20 38 61 / 4%);
+}
+
+.crm-kanban-column {
+  background: #f0f4f8;
+}
+
+.crm-lead-card {
+  box-shadow: 0 3px 9px rgb(20 38 61 / 5%);
+}
+
+.crm-lead-card:hover {
+  box-shadow: 0 10px 22px rgb(20 38 61 / 10%);
+}
+
+.dashboard-metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgb(20 38 61 / 8%);
 }
 
 :root.dark body {
   background-color: #111827;
   color: #f3f4f6;
+}
+
+:root.dark {
+  --app-canvas: #111827;
+  --app-surface: #1f2937;
+  --app-ink: #f3f4f6;
+  --app-muted: #9ca3af;
+  --app-line: #374151;
 }
 
 :root.dark .min-h-screen {
@@ -64,6 +272,55 @@
 
 :root.dark .bg-blue-50 {
   background-color: #172554;
+}
+
+:root.dark .search-hero-panel {
+  background: linear-gradient(118deg, #111d32 0%, #173c59 54%, #105a56 100%);
+}
+
+:root.dark .search-form {
+  border-color: rgb(148 163 184 / 25%);
+  background: #1f2937;
+}
+
+:root.dark .search-field {
+  border-color: #4b5563;
+  background: #111827;
+  color: #f3f4f6;
+}
+
+:root.dark .search-field:focus {
+  border-color: #2dd4bf;
+  background: #111827;
+}
+
+:root.dark .search-submit:disabled {
+  color: #ffffff;
+  opacity: 0.72;
+}
+
+:root.dark .search-empty-card {
+  border-color: #374151;
+  background: linear-gradient(140deg, #1f2937, #172b36);
+}
+
+:root.dark .results-table thead {
+  background: #17212f;
+}
+
+:root.dark .results-count {
+  background: #123b3b;
+  color: #99f6e4;
+}
+
+:root.dark .crm-view-switch,
+:root.dark .crm-kanban-column {
+  border-color: #374151;
+  background: #17212f;
+}
+
+:root.dark .crm-export-actions button {
+  background: #1f2937;
 }
 
 :root.dark .border-blue-100,

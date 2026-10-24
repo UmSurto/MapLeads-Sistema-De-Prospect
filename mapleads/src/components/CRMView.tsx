@@ -3,7 +3,6 @@ import { Lead, MessageTemplate, generateCRMExportCSV, computeLeadMetrics } from 
 import { WhatsAppCRMWindow } from './WhatsAppCRMWindow.tsx';
 import {
   Kanban,
-  Download,
   Send,
   CheckCircle2,
   Phone,
@@ -17,7 +16,9 @@ import {
   Pencil,
   Trash2,
   Check,
-  X
+  X,
+  Share2,
+  Flame
 } from 'lucide-react';
 
 type LeadCrmColor = NonNullable<Lead['crmColor']>;
@@ -249,9 +250,9 @@ export const CRMView: React.FC<CRMViewProps> = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="crm-page max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Top Header & Navigation View Modes */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-5">
+      <div className="crm-page-header flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">
@@ -269,7 +270,7 @@ export const CRMView: React.FC<CRMViewProps> = ({
 
         {/* View mode toggle */}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="bg-gray-100 p-1 rounded-xl flex items-center gap-1 text-xs font-medium">
+          <div className="crm-view-switch bg-gray-100 p-1 rounded-xl flex items-center gap-1 text-xs font-medium">
             <button
               onClick={() => setCrmTab('whatsapp')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
@@ -307,35 +308,33 @@ export const CRMView: React.FC<CRMViewProps> = ({
             </button>
           </div>
 
-          <button
-            onClick={downloadHubspot}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>HubSpot</span>
-          </button>
+          <div className="crm-export-actions flex items-center gap-1.5" aria-label="Exportar contatos">
+            <button
+              type="button"
+              onClick={downloadHubspot}
+              aria-label="Exportar para HubSpot"
+              title="Exportar para HubSpot"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-orange-200 bg-orange-50 text-orange-700 transition-colors hover:bg-orange-100"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
 
-          <button
-            onClick={downloadRDStation}
-            className="flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>RD Station</span>
-          </button>
+            <button
+              type="button"
+              onClick={downloadRDStation}
+              aria-label="Exportar para RD Station"
+              title="Exportar para RD Station"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-blue-700 transition-colors hover:bg-blue-100"
+            >
+              <Flame className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* VIEW 1: WHATSAPP INTEGRADO FULL WINDOW */}
       {crmTab === 'whatsapp' && (
         <div className="space-y-4">
-          <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2">
-            <span className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-              <strong>Integração de terceiros:</strong> As conversas só aparecem após o vínculo real da conta. Esta não é a interface oficial do WhatsApp.
-            </span>
-            <span className="text-[11px] font-semibold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">Baileys • Não oficial</span>
-          </div>
-
           <WhatsAppCRMWindow
             leads={leads}
             activeLeadId={activeChatLeadId}
@@ -426,7 +425,7 @@ export const CRMView: React.FC<CRMViewProps> = ({
       {crmTab === 'kanban' && (
         <div className="space-y-6">
           {/* Conversion Funnel Summary Banner */}
-          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs flex flex-wrap items-center justify-between gap-4 text-xs font-medium text-gray-700">
+          <div className="crm-metrics-strip bg-white p-4 rounded-2xl border border-gray-200 shadow-xs flex flex-wrap items-center justify-between gap-4 text-xs font-medium text-gray-700">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-blue-600"></span>
               <span>Taxa de Conversão da Rodada: <strong className="text-blue-700">{metrics.conversionRate}%</strong></span>
@@ -446,7 +445,7 @@ export const CRMView: React.FC<CRMViewProps> = ({
               return (
                 <div
                   key={stage.key}
-                  className="bg-gray-50/80 rounded-2xl border border-gray-200 p-3 flex flex-col min-h-[500px]"
+                  className="crm-kanban-column bg-gray-50/80 rounded-2xl border border-gray-200 p-3 flex flex-col min-h-[500px]"
                 >
                   {/* Column Header */}
                   <div className="flex items-center justify-between p-2 mb-2 rounded-xl bg-white border border-gray-100 shadow-2xs">
@@ -466,7 +465,7 @@ export const CRMView: React.FC<CRMViewProps> = ({
                       stageLeads.map((lead) => (
                         <div
                           key={lead.id}
-                          className={`bg-white p-3.5 rounded-xl border border-gray-200 border-l-4 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between ${
+                          className={`crm-lead-card bg-white p-3.5 rounded-xl border border-gray-200 border-l-4 shadow-xs hover:shadow-md transition-shadow flex flex-col justify-between ${
                             CRM_COLORS.find((color) => color.value === (lead.crmColor || 'active'))?.card || 'border-l-emerald-500'
                           }`}
                         >
@@ -526,7 +525,7 @@ export const CRMView: React.FC<CRMViewProps> = ({
       )}
 
       {/* Webhook Dispatch Card */}
-      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-xs">
+      <div className="crm-webhook-card bg-white p-4 sm:p-5 rounded-2xl border border-gray-200 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5">

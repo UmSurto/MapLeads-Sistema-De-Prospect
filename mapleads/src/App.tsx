@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { Search } from 'lucide-react';
 import { Header } from './components/Header.tsx';
 import { SearchHero } from './components/SearchHero.tsx';
 import { SearchResults } from './components/SearchResults.tsx';
@@ -17,6 +18,7 @@ import { searchLocalBusinesses } from './services/leadSearchService.ts';
 const STORAGE_LISTS_KEY = 'mapleads_static_lists_v1';
 const STORAGE_LEADS_KEY = 'mapleads_static_leads_v1';
 const STORAGE_THEME_KEY = 'mapleads_theme_v1';
+const SEARCH_EMPTY_STATE_FADE_MS = 250;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'search' | 'dashboard' | 'crm' | 'templates'>('search');
@@ -33,6 +35,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<Lead[]>([]);
   const [hasSearched, setHasSearched] = useState<boolean>(false);
+  const [showSearchEmptyState, setShowSearchEmptyState] = useState(true);
+  const [isSearchEmptyStateFading, setIsSearchEmptyStateFading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [notificationIsError, setNotificationIsError] = useState(false);
 
@@ -112,6 +116,11 @@ export default function App() {
     setNotification(null);
     setHasSearched(false);
     setSearchResults([]);
+    if (showSearchEmptyState) {
+      setIsSearchEmptyStateFading(true);
+      await new Promise((resolve) => window.setTimeout(resolve, SEARCH_EMPTY_STATE_FADE_MS));
+      setShowSearchEmptyState(false);
+    }
     try {
       const results = await searchLocalBusinesses({
         location,
@@ -210,7 +219,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8fafd] text-[#202124]">
+    <div className="app-shell min-h-screen flex flex-col bg-[#f4f7fb] text-[#202124]">
       {/* Top Application Header */}
       <Header
         activeTab={activeTab}
@@ -232,6 +241,27 @@ export default function App() {
               onSearch={() => void handleSearch()}
               isLoading={isLoading}
             />
+
+            {showSearchEmptyState && (
+              <section
+                aria-label="Orientações para iniciar uma busca"
+                className={`mx-auto max-w-3xl px-4 pb-8 text-center transition-opacity duration-300 ease-out motion-reduce:transition-none sm:px-6 ${
+                  isSearchEmptyStateFading ? 'opacity-0' : 'opacity-100'
+                }`}
+              >
+                <div className="search-empty-card rounded-2xl border border-gray-200 bg-white px-6 py-8 shadow-sm sm:px-10">
+                  <span className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-700">
+                    <Search className="h-5 w-5" />
+                  </span>
+                  <h2 className="text-lg font-bold text-gray-900">
+                    Nenhum resultado exibido ainda
+                  </h2>
+                  <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-gray-600">
+                    Preencha a localização e o segmento acima e clique em <strong>Buscar</strong> para extrair nomes, telefones e dados de comércios locais direto para a sua base de prospecção.
+                  </p>
+                </div>
+              </section>
+            )}
 
             {notification && (
               <div className="mx-auto max-w-5xl px-4 pb-4 sm:px-6" role="status">
@@ -301,7 +331,7 @@ export default function App() {
       />
 
       {/* Modern Footer with Google Aesthetic */}
-      <footer className="mt-auto bg-white border-t border-gray-200 py-6 text-xs text-gray-500">
+      <footer className="app-footer mt-auto bg-white border-t border-gray-200 py-6 text-xs text-gray-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <span className="font-bold text-gray-800">MapLeads</span>

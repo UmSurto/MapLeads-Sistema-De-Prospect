@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, MapPin, Star, UserPlus } from 'lucide-react';
+import { Check, MapPin, Star, UserPlus, SearchX } from 'lucide-react';
 import { getLeadIdentity, Lead } from '../utils/leads.ts';
 
 interface SearchResultsProps {
@@ -27,24 +27,31 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
   if (!leads.length) {
     return (
-      <div className="mx-auto max-w-5xl px-4 pb-8 sm:px-6">
-        <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-600">
-          Nenhum estabelecimento foi retornado pelo Google Maps para essa busca.
+      <div className="search-empty-state mx-auto max-w-5xl px-4 pb-8 sm:px-6">
+        <div className="search-empty-card rounded-2xl border p-10 text-center text-sm">
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
+            <SearchX className="h-5 w-5" />
+          </span>
+          <h2 className="font-semibold text-gray-900">Nenhum estabelecimento encontrado</h2>
+          <p className="mt-1 text-gray-600">Tente outra região ou ajuste o segmento da pesquisa.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6">
+    <section className="search-results mx-auto max-w-7xl px-4 pb-10 sm:px-6">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="text-base font-bold text-gray-900">Resultados do Google Maps</h2>
-        <span className="text-xs text-gray-500">{leads.length} estabelecimentos</span>
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-teal-700">Sua prospecção</p>
+          <h2 className="mt-1 text-lg font-bold text-gray-900">Resultados da busca</h2>
+        </div>
+        <span className="results-count rounded-full px-3 py-1.5 text-xs font-semibold">{leads.length} estabelecimentos</span>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white shadow-sm">
-        <table className="w-full min-w-[860px] text-left text-xs">
-          <thead className="border-b border-gray-200 bg-gray-50 text-[10px] uppercase tracking-wide text-gray-500">
+      <div className="results-table-wrap overflow-x-auto rounded-2xl border bg-white shadow-sm">
+        <table className="results-table w-full min-w-[860px] text-left text-xs">
+          <thead className="border-b bg-gray-50 text-[10px] uppercase tracking-wide text-gray-500">
             <tr>
               <th className="px-4 py-3">Estabelecimento</th>
               <th className="px-4 py-3">Telefone</th>
@@ -57,7 +64,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
             {leads.map((lead) => {
               const isSaved = savedLeadIdentities.has(getLeadIdentity(lead));
               return (
-                <tr key={lead.id} className="hover:bg-gray-50/70">
+                <tr key={lead.id} className="transition-colors hover:bg-gray-50/70">
                   <td className="max-w-lg px-4 py-3">
                     <div className="font-semibold text-gray-900">{lead.name}</div>
                     <div className="mt-1 flex items-start gap-1 text-[11px] text-gray-500">
@@ -101,6 +108,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                       type="button"
                       onClick={() => onSaveToCRM(lead)}
                       disabled={isSaved}
+                      aria-label={isSaved ? `${lead.name} salvo no CRM` : `Salvar ${lead.name} no CRM`}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 font-semibold text-white hover:bg-emerald-700 disabled:cursor-default disabled:bg-emerald-100 disabled:text-emerald-800"
                     >
                       {isSaved ? <Check className="h-3.5 w-3.5" /> : <UserPlus className="h-3.5 w-3.5" />}
